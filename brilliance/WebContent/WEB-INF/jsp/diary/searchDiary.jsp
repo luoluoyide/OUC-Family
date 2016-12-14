@@ -7,19 +7,33 @@
 <title>戴宗日记管理</title>
 <style>
 body {
-	margin:0;
+	margin: 0;
 }
-body, html{width: 100%;height: 100%;margin:0;font-family:"微软雅黑";font-size:14px;}
+
+body, html {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	font-family: "微软雅黑";
+	font-size: 14px;
+}
+
 #userInfoTbl_wrapper .row {
-	margin-right:0px !important;
-	margin-left:0px !important
+	margin-right: 0px !important;
+	margin-left: 0px !important
 }
-.form-group{
-    margin-right:15px;
+
+.form-group {
+	margin-right: 15px;
 }
-.datepicker{
-    z-index:2000 !important;
+
+.datepicker {
+	z-index: 2000 !important;
 }
+#diaryInfoDiv .dataTables_length {
+	padding-top:9px;
+}
+
 </style>
 <link rel="stylesheet" href="<%=rootPath%>/css/jquery.dataTables.min.css"/>
 <link rel="stylesheet" href="<%=rootPath%>/css/dataTables.bootstrap.css"/>
@@ -77,10 +91,18 @@ $(document).ready(function(){
 		}
 	});	  
 	
+	//温馨提示modal框
+	var alertDialog = $('#alert_dialog');
+	
 	//删除确认
 	$(".btn-diary-remove").on("click",function(){
 		var check_boxes = $("input[name='id']:checked");
-		if(check_boxes.length<=0){ alert('请至少选择一条记录！');return;}
+		if(check_boxes.length<=0){ 
+			//alert('请至少选择一条记录！');
+			//alertDialog.modal('show').find('.modal-dialog .modal-body').text('请选择一条记录，进行修改！');
+			showErrorAlert('请至少选择一条记录！');
+			return;
+		}
 		var alertBeforeDelete = "您确定要删除吗这些日记吗？";
 		
 		if(confirm(alertBeforeDelete)){
@@ -176,7 +198,7 @@ $(document).ready(function(){
 		
 		$("#diaryPreviewType").find('option:selected').text($("#diaryDetailType").find('option:selected').text());
 		$("#diaryPreviewType").find('option:selected').val($("#diaryDetailType").find('option:selected').val());
-		var newDate = new Date($('#diaryDetailDateDiv').datepicker("getDate")).format('yyyy-MM-dd')
+		var newDate = new Date($('#diaryDetailDateDiv').datepicker("getDate")).format('yyyy-MM-dd');
 		$('#diaryPreviewDate').val(newDate);
 		$(".summernotePreview").html($('.summernote').code());
 		$("#modal-diary-preview").modal("show");
@@ -244,7 +266,6 @@ $(document).ready(function(){
 		$("#modal-diary-detail").modal("show");
 	});
 	
-	
 	//正在做修改的行索引
 	var updateingRowIndex = null;
 	//修改日记
@@ -254,7 +275,12 @@ $(document).ready(function(){
 		$(".btn-diary-preview,.btn-diary-submit-confirm").css("display","none");
 		
 		var check_boxes = $("input[name='id']:checked");
-		if(check_boxes.length > 1||check_boxes.length == 0){ alert('请选择一条记录，进行修改！');return;}
+		if(check_boxes.length > 1 || check_boxes.length == 0){
+			//alert('请选择一条记录，进行修改！');
+			//alertDialog.modal('show').find('.modal-dialog .modal-body').text('请选择一条记录，进行修改！');
+			showErrorAlert('请选择一条记录，进行修改！');
+			return false;
+		}
 		
 		//前端获取要修改的日记
 		var thisDiary = $(check_boxes[0]);
@@ -353,33 +379,40 @@ $(document).ready(function(){
 		                   	{"name":"diaryType","value":$('#diaryType').val()},
 		                  ];
 		dataTables = $('#diaryInfoTable').dataTable( {
-						"aLengthMenu":[[10, 25, 50, 100], [10, 25, 50, 100]],
+						"aLengthMenu":[[2,10, 25, 50, 100], [2,10, 25, 50, 100]],
 						"iDisplayLength":10,//每页几条数据
 						"iDisplayStart":0,//sDisplayLength*3,//显示的记录从哪儿开始
 						
-						//"bAutoWidth ":true,
+						"bAutoWidth":false,
 						"bDestroy":true,
 						"bProcessing": true,
 				        "bPaginate":true,
 				        "bSort": true,
-				        "sDom": "<'row'<'col-7'f><'col-7'l>r>t<'row'<'col-7'i><'col-7'p>>",
+				        "sDom": "<'row-fluid'<'col-7'f><'col-7'>r>t<'row-fluid'<'col-7'i<'clear'l>><'col-7'p>>",
+				        //"sDom" : '<"top"iflp<"clear">>rt<"bottom"ilp<"clear">>',
 				        "oLanguage": {
 				            "sSearch": "查找:",
-				            "sZeroRecords": "没数据",
-				            "sLengthMenu": "每页 _MENU_ 条",
-				            "sNext": "下页",
-				            "sInfo": "_START_ - _END_ of _TOTAL_",
-				            "sInfoEmpty": "_START_ - _END_ of _TOTAL_"
-				          },
+				            "sLengthMenu": "每页显示 _MENU_ 条",
+				            "oPaginate": {
+								  "sFirst": "首页",
+								  "sPrevious": "上一页",
+								  "sNext": "下一页",
+								  "sLast": "尾页"
+							},
+				            "sInfo": "从_START_ 到 _END_ /共 _TOTAL_条数据，",
+				            "sZeroRecords": "没有查询到数据",
+				            "sInfoEmpty": "没有数据"
+				        },
 				        "sPaginationType": "bootstrap",
 				        "fnServerParams":function (aoData){
 				        	$.merge(aoData, queryString);
 				        },
 				        //"bServerSide": true,
 				        "sAjaxSource":"../DiaryInfo/getDiaryList",
-				        "sAjaxDataProp":"data.lstDiary", 
+				        "sAjaxDataProp":"data.lstDiary",
+				        "sProcessing" : "正在获取数据，请稍后...",
 				        "aoColumns":[
-										{"sTitle": "<input type='checkbox' name='selectAll' id='selectAll' ><label for='selectAll'>全选</label>","mData":"","sDefaultContent":"","bSortable":false,"bSearchable": true, "bVisible": true},
+										{"sTitle": "<input type='checkbox' name='selectAll' id='selectAll'>","mData":"","sDefaultContent":"","bSortable":false,"bSearchable": true, "bVisible": true,"sClass": "text-center"},
 										{"sTitle": "日记日期","mData":"diaryDate","sDefaultContent":"","bSearchable": true, "bVisible": true},
 	                                    {"sTitle": "日记标题","mData":"diaryTitle","sDefaultContent":"","bSearchable": true, "bVisible": true},
 	                                    {"sTitle": "作者","mData":"author","sDefaultContent":"","bSearchable": true, "bVisible": true},
@@ -446,14 +479,27 @@ $(document).ready(function(){
 	  
 });
 
-
-
-
-
-
 </script>
 
 <body>
+	<!-- 模态框显示提示信息 -->
+	<div id="alert_dialog" class="modal fade modal_wrapper" tabindex="-1" role="dialog"
+		aria-labelledby="mySmallModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-sm" style="display:block;">
+			<div class="modal-content">
+				<div class="modal-header">
+	                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+	                <h4 class="modal-title" id="myModalLabel">温馨提示</h4>
+	            </div>
+	            <div class="modal-body">正在加载中...</div>
+	            <div class="modal-footer" style="text-align:center;">
+	                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+	                <!-- <button type="button" class="btn btn-primary">提交更改</button> -->
+	            </div>
+			</div>
+		</div>
+	</div>
+	
 	<div class="container">
 		<form class="form-signin" id="form1" role="form" method="post" action="">
 	<div class="panel panel-default">
@@ -529,7 +575,7 @@ $(document).ready(function(){
 				<button type="button" class="btn btn-lg btn-primary btn-diary-remove" data-toggle="modal">删除日记</button>
 			</div>
 			<hr>
-			<div id="diaryInfoDiv" class="table-responsive">
+			<div id="diaryInfoDiv">
 				<table id="diaryInfoTable"  class="table table-striped table-bordered table-hover datatable"></table>
 			</div>
 		</div>
@@ -670,6 +716,7 @@ $(document).ready(function(){
 			</div>
 		</div>
 	</div>
+
 	<!-- 新增日记 - 预览	Modal结束 -->
 <%@ include file="../common/footer.jsp"%>
 </body>
